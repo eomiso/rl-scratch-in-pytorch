@@ -181,7 +181,9 @@ class ActorNetwork(nn.Module):
         action = T.tanh(actions) * T.tensor(self.max_action).to(self.device)
         # goes into the calculation of the loss function
         log_probs = probabilities.log_prob(actions)
+        # log zero is not defined, comes from appendix in the paper
         log_probs -= T.log(1 - action.pow(2) + self.reparam_noise)
+        # We need a scalar quantity
         log_probs = log_probs.sum(1, keepdim=True)
 
         return action, log_probs
