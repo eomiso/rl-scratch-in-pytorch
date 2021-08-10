@@ -10,7 +10,7 @@ from networks import ActorNetwork, CriticNetwork, ValueNetwork
 # in the framework.
 class Agent():
     def __init__(self,
-                 alphai=0.0003,
+                 alpha=0.0003,
                  beta=0.0003,
                  input_dims=[8],
                  env=None,
@@ -55,7 +55,7 @@ class Agent():
         return actions.cpu().detach().numpy()[0]
 
     # an interface function between the agent and memory
-    def remember(self, state, act, reward, new_state, done):
+    def remember(self, state, action, reward, new_state, done):
         self.memory.store_transition(state, action, reward, new_state, done)
 
     def update_network_parameters(self, tau=None):
@@ -74,7 +74,7 @@ class Agent():
 
         self.target_value.load_state_dict(value_state_dict)
 
-    def save_model(self):
+    def save_models(self):
         print('.... saving models ....')
         self.actor.save_checkpoint()
         self.value.save_checkpoint()
@@ -82,7 +82,7 @@ class Agent():
         self.critic_1.save_checkpoint()
         self.critic_2.save_checkpoint()
 
-    def load_model(self):
+    def load_models(self):
         print('.... loading models ....')
         self.actor.load_checkpoint()
         self.value.load_checkpoint()
@@ -92,7 +92,7 @@ class Agent():
 
     def learn(self):
         # check if the memory has at least more than batch_size
-        if self.memeory.mem_cntr < self.batch_size:
+        if self.memory.mem_cntr < self.batch_size:
             return
 
         state, action, reward, new_state, done = \
@@ -113,11 +113,13 @@ class Agent():
                                                       reparametrize=False)
         log_probs = log_probs.view(-1)
         # To prevent overestimate use two policy, more significant in TD3
+        # policy evaluation
         q1_new_policy = self.critic_1.forward(state, actions)
         q2_new_policy = self.critic_2.forward(state, actions)
         critic_value = T.min(q1_new_policy, q2_new_policy)
         critic_value = critic_value.view(-1)
 
+        # use the policy evaluation to improve value function
         self.value.optimizer.zero_grad()
         value_target = critic_value - log_probs
         value_loss = 0.5 * F.mse_loss(value, value_target)

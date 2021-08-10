@@ -48,9 +48,9 @@ if __name__ == '__main__':
 
     if not load_checkpoint:
         x = [i + 1 for i in range(n_games)]
-        running_avg = np.zeros(len(scores))
+        running_avg = np.zeros(len(score_history))
         for i in range(len(running_avg)):
-            running_avg[i] = np.mean(scores[max(0, i - 100):(i + 1)])
+            running_avg[i] = np.mean(score_history[max(0, i - 100):(i + 1)])
 
         plt.plot(x, running_avg)
         plt.title('Running average of privous 100 scores')
